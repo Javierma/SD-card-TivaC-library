@@ -681,7 +681,7 @@ long list_dirs_and_files(long next_cluster,enum name_type name, enum get_subdirs
 	unsigned char buffer[512];
 	int position=0,filename_position=0;
 	int n=0;
-	unsigned long count=10,sectors_to_be_read=sectors_per_cluster;//Calculate this
+	unsigned long count=10,sector=0,sectors_to_be_read=sectors_per_cluster;//Calculate this
 	long address=cluster_begin_lba + ((next_cluster - 2) * (unsigned long)sectors_per_cluster);
 	if(cluster_dir == next_cluster)
 	{
@@ -896,14 +896,13 @@ long list_dirs_and_files(long next_cluster,enum name_type name, enum get_subdirs
 	}
 	send_command(CMD12,0,SSI_number);
 	sectors_to_be_read=(next_cluster*4)/512;
-	long sector=0;
 	if(send_command(CMD18,fat_begin_lba,SSI_number)==0)
 	{
 		do
 		{
 			sector++;
 			rcvr_datablock(buffer, 512,SSI_number);
-		}while(sectors_to_be_read>0);
+		}while(sector<=sectors_to_be_read);
 		sector--;
 	}
 	send_command(CMD12,0,SSI_number);
@@ -978,7 +977,7 @@ long open_file(long next_cluster,enum SSI SSI_number)
 		{
 			sector++;
 			rcvr_datablock(buffer, 512,SSI_number);
-		}while(sectors_to_be_read>0);
+		}while(sector<=sectors_to_be_read);
 		sector--;
 	}
 	send_command(CMD12,0,SSI_number);
