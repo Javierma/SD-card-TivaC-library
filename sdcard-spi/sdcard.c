@@ -303,7 +303,7 @@ void startSSI0()
 {
 	volatile unsigned long delay;
 	SYSCTL_RCGC2_R |= 0x00000001;   	  //  activate clock for Port A
-	SYSCTL_RCGCSSI_R|=0x1;		  		  //  activate clock for SSI0
+	SYSCTL_RCGCSSI_R|=SYSCTL_RCGCSSI_R0;		  		  //  activate clock for SSI0
 	delay = SYSCTL_RCGC2_R;         	  //  allow time for clock to stabilize
 	GPIO_PORTA_DIR_R |= 0x08;             // make PA6,7 out
 	GPIO_PORTA_DR4R_R |= 0xEC;            // 4mA output on outputs
@@ -333,7 +333,6 @@ void startSSI1()
 {
 	volatile unsigned long delay;
 	SYSCTL_RCGC2_R |= 0x30;   		// activate clock for Port E and Port F
-	SYSCTL_RCGC1_R |= SYSCTL_RCGC1_SSI1;
 	SYSCTL_RCGCSSI_R|=SYSCTL_RCGCSSI_R1;	// activate clock for SSI1
 	delay = SYSCTL_RCGC2_R;         		// allow time for clock to stabilize
 	GPIO_PORTF_LOCK_R=0x4C4F434B;
@@ -395,7 +394,6 @@ void startSSI3()
 {
 	volatile unsigned long delay;
 	SYSCTL_RCGC2_R |= 0x00000008;   		// activate clock for Port D
-	SYSCTL_RCGC1_R|=SYSCTL_RCGC1_SSI1;	// activate clock for SSI3
 	SYSCTL_RCGCSSI_R|=SYSCTL_RCGCSSI_R3;	// activate clock for SSI3
 	delay = SYSCTL_RCGC2_R;         		// allow time for clock to stabilize
 	GPIO_PORTD_LOCK_R=0x4C4F434B;
