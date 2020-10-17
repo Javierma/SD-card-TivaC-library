@@ -2,16 +2,16 @@
  * sdcard.c
  *
  *  Created on: 15/09/2016
- *  Author: Javier Martínez Arrieta
+ *  Author: Javier MartÃ­nez Arrieta
  *  Version: 1.0
  *  This is part of the sdcard library, with functions that will allow you to read and (in the future) write in an SD card formatted using FAT32 (single partition).
  */
 
- /*  Copyright (C) 2016 Javier Martínez Arrieta
+ /*  Copyright (C) 2016 Javier MartÃ­nez Arrieta
  *
  *  This project is licensed under Creative Commons Attribution-Non Commercial-Share Alike 4.0 International (CC BY-NC-SA 4.0). According to this license you are free to:
- *  Share — copy and redistribute the material in any medium or format.
- *  Adapt — remix, transform, and build upon the material.
+ *  Share & copy and redistribute the material in any medium or format.
+ *  Adapt & remix, transform, and build upon the material.
  *  The licensor cannot revoke these freedoms as long as you follow the license terms.
  *	Complete information about this license can be found at: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
  *
@@ -38,7 +38,7 @@
  */
 
 #include "sdcard.h"
-#include "inc/tm4c123gh6pm.h"
+#include "/Users/javiermartinez/TivaWare/inc/tm4c123gh6pm.h"
 #include <stdio.h>
 
 
@@ -46,7 +46,7 @@ unsigned char Timer1,Timer2;
 unsigned long lba_begin_address,number_of_sectors,lba_addr,cluster_start,file_size,cluster_begin_lba,fat_begin_lba,sectors_per_fat,root_dir_first_cluster;
 unsigned long previous_cluster=0,cluster_dir=0;
 unsigned char sectors_per_cluster;
-char cuenta=0,current_count=0;
+char fd_count=0,current_count=0;
 char finish=0;
 int row=0,column=0,number=0;
 
@@ -118,7 +118,7 @@ void sd_write(char message,enum SSI SSI_number)
 		}
 		case SSI3:
 		{
-			while((SSI1_SR_R&SSI_SR_TNF)==0){};
+			while((SSI3_SR_R&SSI_SR_TNF)==0){};
 			//DC = DC_DATA;
 			SSI3_DR_R = message;
 			while((SSI3_SR_R&SSI_SR_RNE)==0){};
@@ -126,6 +126,49 @@ void sd_write(char message,enum SSI SSI_number)
 			break;
 		}
 	}
+}
+
+/*
+ * Removes null or other non-printable characters from the file or directory name string
+ * Also 'translate' accented characters so they can be printed
+ */
+void clean_name()
+{
+    char temp_name[255] = "";
+    char j=0, k=0;
+    //Remove all non-rintable characters
+    for(j=0;j<255;j++)
+    {
+        if(file_dir[fd_count].name.file_dir_name[j]>=0x20 && file_dir[fd_count].name.file_dir_name[j]<=0xFC)
+        {
+            temp_name[k] = file_dir[fd_count].name.file_dir_name[j];
+            k++;
+        }
+    }
+    for(j=0;j<255;j++)
+    {
+        file_dir[fd_count].name.file_dir_name[j] = temp_name[j];
+    }
+
+
+    //Uncomment the following line if using my Nokia5110 library
+    //Translate Unicode extended characters like accented characters
+    /*char original_char[] = {'\xe1','\xe9', '\xed', '\xf3', '\xfa', '\xfc', '\xf1', '\xd1'};
+    char translated_char[] = {'\xa1', '\xa9', '\xad', '\xb3', '\xba', '\xbc', '\xb1', '\x91'};
+    for(j=0;j<255;j++)
+    {
+        uint8_t found = 0;
+        k=0;
+        while(found == 0 && k < 8)
+        {
+            if(file_dir[fd_count].name.file_dir_name[j] == original_char[k])
+            {
+                found = 1;
+                file_dir[fd_count].name.file_dir_name[j] = translated_char[k];
+            }
+            k++;
+        }
+    }*/
 }
 
 /*
@@ -222,9 +265,9 @@ unsigned char send_command(unsigned char command, unsigned long argument, enum S
 }
 
 /*
- * Initializes the SD card
+ * Initialises the SD card
  */
-void initialize_sd(enum SSI SSI_number)
+void initialise_sd(enum SSI SSI_number)
 {
 	unsigned char i;
 	unsigned char ocr[4];
@@ -303,7 +346,7 @@ void startSSI0()
 {
 	volatile unsigned long delay;
 	SYSCTL_RCGC2_R |= 0x00000001;   	  //  activate clock for Port A
-	SYSCTL_RCGCSSI_R|=SYSCTL_RCGCSSI_R0;		  		  //  activate clock for SSI0
+	SYSCTL_RCGCSSI_R|=SYSCTL_RCGCSSI_R0;  //  activate clock for SSI0
 	delay = SYSCTL_RCGC2_R;         	  //  allow time for clock to stabilize
 	GPIO_PORTA_DIR_R |= 0x08;             // make PA6,7 out
 	GPIO_PORTA_DR4R_R |= 0xEC;            // 4mA output on outputs
@@ -333,6 +376,7 @@ void startSSI1()
 {
 	volatile unsigned long delay;
 	SYSCTL_RCGC2_R |= 0x30;   		// activate clock for Port E and Port F
+	//SYSCTL_RCGC1_R |= SYSCTL_RCGC1_SSI1;
 	SYSCTL_RCGCSSI_R|=SYSCTL_RCGCSSI_R1;	// activate clock for SSI1
 	delay = SYSCTL_RCGC2_R;         		// allow time for clock to stabilize
 	GPIO_PORTF_LOCK_R=0x4C4F434B;
@@ -394,6 +438,7 @@ void startSSI3()
 {
 	volatile unsigned long delay;
 	SYSCTL_RCGC2_R |= 0x00000008;   		// activate clock for Port D
+	//SYSCTL_RCGC1_R|=SYSCTL_RCGC1_SSI1;	// activate clock for SSI3
 	SYSCTL_RCGCSSI_R|=SYSCTL_RCGCSSI_R3;	// activate clock for SSI3
 	delay = SYSCTL_RCGC2_R;         		// allow time for clock to stabilize
 	GPIO_PORTD_LOCK_R=0x4C4F434B;
@@ -511,7 +556,7 @@ void cs_low(enum SSI SSI_number)
 		}
 		case SSI3:
 		{
-			GPIO_PORTD_DATA_R&=~0x02;
+			GPIO_PORTD_DATA_R&= ~0x02;
 			break;
 		}
 	}
@@ -647,7 +692,8 @@ void read_first_sector(enum SSI SSI_number)
 		printf("FS is FAT32\n");
 	}
 	else{
-		printf("Error FAT32");
+		printf("\nError FAT32");
+		exit(1);
 	}
 	lba_begin_address=(unsigned long)buffer[454]+(((unsigned long)buffer[455])<<8)+(((unsigned long)buffer[456])<<16)+(((unsigned long)buffer[457])<<24);
 	number_of_sectors=(unsigned long)buffer[458]+(((unsigned long)buffer[459])<<8)+(((unsigned long)buffer[460])<<16)+(((unsigned long)buffer[461])<<24);
@@ -674,12 +720,13 @@ void read_disk_data(enum SSI SSI_number)
 /*
  * List directories and files using the long name (if it has) or the short name, listing subdirectories as well if asked by the user
  */
-long list_dirs_and_files(long next_cluster,enum name_type name, enum get_subdirs subdirs, enum SSI SSI_number)
+long get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs subdirs, enum SSI SSI_number)
 {
 	unsigned char buffer[512];
+    char filename[255] = "";
 	int position=0,filename_position=0;
 	int n=0;
-	unsigned long count=10,sector=0,sectors_to_be_read=sectors_per_cluster;//Calculate this
+	unsigned long count=10,sectors_to_be_read=sectors_per_cluster;//Calculate this
 	long address=cluster_begin_lba + ((next_cluster - 2) * (unsigned long)sectors_per_cluster);
 	if(cluster_dir == next_cluster)
 	{
@@ -692,7 +739,7 @@ long list_dirs_and_files(long next_cluster,enum name_type name, enum get_subdirs
 			rcvr_datablock(buffer, 512,SSI_number);
 			do
 			{
-				if(position<512 && filename_position<255 /*&& position%32==0 && buffer[position]!=0x00 && buffer[position]!=0x05 /*&& buffer[position]!=0x00*/)
+				if(position<512 && filename_position<255)
 				{//Long filename text - 11th byte is 0x0F
 					if(position%32==0)
 					{//Check if file has a long filename text, normal record with short filename, unused or end of a directory
@@ -708,159 +755,264 @@ long list_dirs_and_files(long next_cluster,enum name_type name, enum get_subdirs
 							}
 							else
 							{
-								if(buffer[position+11]==0x0F && name==LONG_NAME)//Review this
-								{//Long filename text (to be ignored?)
-									//Get the number of groups of 32 bytes corresponding to the name of file or directory
-									short keep_counting=1,do_not_continue=0,is_dir=0;
-									int pos=position+32;
-									do
+								if(name==LONG_NAME)//Review this
+								{//Review this as there are files which long name are not read, probably because they only have one sequence for the name
+									short keep_counting=1,do_not_continue=0,is_dir=0, keep_reading = 1;
+									uint8_t seq_num = 0, filename_read_finished = 0;
+									if(buffer[position+11]==0x0F)
 									{
-										if(buffer[pos+11]==0x0F)
-										{
-											pos=pos+32;
-										}
-										else
-										{
-											//Is it hidden, operating system or Volume ID?
-											if((buffer[pos+11]&0x0E)>0x00)
-											{
-												do_not_continue=1;
-											}
-											else
-											{
-												if((buffer[pos+11]&0x10)==0x10)
-												{
-													is_dir=1;
-												}
-											}
-											keep_counting=0;
-										}
-									}while(keep_counting==1);
-									if(do_not_continue==0)
-									{
-										int num_blocks=(pos-position)/32;
-										int current_block=0;
-										if(is_dir)
-										{
-											file_dir[cuenta].type=IS_DIR;
-										}
-										else
-										{
-											file_dir[cuenta].type=IS_FILE;
-										}
-										//Get sequence number
-										do
-										{
-											int seq_num=buffer[position]&0x1F;
-											filename_position=32*(seq_num-1);
-											position++;
-											for(n=1;n<32;n++)
-											{
-												if((n<11 || n>13) && n!=26)
-												{
-													file_dir[cuenta].name.file_dir_name[filename_position+n]=buffer[position];
-												}
-												position++;
-											}
-											current_block++;
-											num_blocks--;
-										}while(num_blocks>0);
-										clean_name();
-										int time=(((int)(buffer[position/*-11*/+23]))<<8) + ((int)buffer[position/*-11*/+22]);
-										int date=(((int)(buffer[position/*-11*/+25]))<<8) + ((int)buffer[position/*-11*/+24]);
-										file_dir[cuenta].name.info.minute=(time&0x07E0)>>5;
-										file_dir[cuenta].name.info.hour=(time&0xF800)>>11;
-										file_dir[cuenta].name.info.month=((date&0x01E0)>>5);
-										file_dir[cuenta].name.info.year=((date&0xFE00)>>9)+1980;
-										file_dir[cuenta].name.info.day=date&0x001F;
-										file_dir[cuenta].name.info.size=(long)((buffer[position/*-11*/+31])<<24)+(long)((buffer[position/*-11*/+30])<<16)+(long)((buffer[position/*-11*/+29])<<8)+(long)(buffer[position/*-11*/+28]);
-										file_dir[cuenta].name.info.first_cluster=(long)((buffer[position/*-11*/+21])<<24)+(long)((buffer[position/*-11*/+20])<<16)+(long)((buffer[position/*-11*/+27])<<8)+(long)(buffer[position/*-11*/+26]);
-										position=position+32;
+									    do
+                                        {
+                                            //Check if it is last record group of the filename
+                                            if(buffer[position+11]!=0x0F)
+                                            {
+                                                keep_reading = 0;
+                                                if(position == 512)
+                                                {
+                                                    filename_read_finished = 0;
+                                                }
+                                                else
+                                                {
+                                                    filename_read_finished = 1;
+                                                }
+                                            }
+                                            //Get the sequence number
+                                            seq_num=buffer[position]&0x1F;
+
+                                            uint8_t k=0,l=0;
+                                            while(k<32 && keep_reading == 1)
+                                            {
+                                                if((k>0 && k<11) || (k>13 && k<26) || (k>27 && k<32))
+                                                {
+                                                    filename[(32*(seq_num-1))+l] = buffer[position];
+                                                    l++;
+                                                }
+                                                k++;
+                                                position++;
+                                            }
+                                        }while(keep_reading == 1);
 									}
 									else
 									{
-										position=position+(32*(pos/32));
+									    //Filename exactly has a length of 8 bytes and either the base name or the extension have all its characters in capital letters, so we need to check
+									    if((buffer[position+12]&0x18)>0)
+                                        {
+									        if((buffer[position+12]&0x10)>0 && (buffer[position+12]&0x08)>0)
+									        {
+									            uint8_t k=0;
+									            while(k<11)
+									            {
+									                if(k < 8)
+									                {
+									                    filename[k] = buffer[position];
+									                }
+									                else
+									                {
+									                    if(k >= 8)
+									                    {
+									                        filename[k+1] = buffer[position];
+									                    }
+									                }
+									                k++;
+									                position++;
+									            }
+									            filename[8] = '.';
+									        }
+									        else
+									        {
+									            //Extension is in lowercase, basename is in uppercase
+									            if((buffer[position+12]&0x10)>0)
+									            {
+									                uint8_t k=0;
+									                while(k<11)
+									                {
+									                    if(k<8)
+									                    {
+									                        filename[k] = buffer[position];
+									                    }
+									                    else
+									                    {
+									                        filename[k+1] = buffer[position] + 32;
+									                    }
+									                    k++;
+									                    position++;
+									                }
+									                filename[8] = '.';
+									            }
+									            else
+									            {
+									                //Extension in uppercase, basename in lowercase
+									                if((buffer[position+12]&0x08)>0)
+									                {
+									                    uint8_t k=0;
+									                    while(k<11)
+									                    {
+									                        if(k<8)
+									                        {
+									                            filename[k] = buffer[position] + 32;
+									                        }
+									                        else
+									                        {
+									                            filename[k+1] = buffer[position];
+									                        }
+									                        k++;
+									                        position++;
+									                    }
+									                    filename[8] = '.';
+									                }
+									            }
+									        }
+                                            filename_read_finished = 1;
+                                            position = position - 11;
+                                        }
+									    else
+									    {
+									        //Both basename and extension are lowercase
+									        if((buffer[position+12]&0x18)==0)
+									        {
+									            uint8_t k=0;
+									            while(k<11)
+									            {
+									                if(k < 8)
+									                {
+									                    filename[k] = buffer[position] + 32;
+									                }
+									                else
+									                {
+									                    if(k >= 8)
+									                    {
+									                        filename[k+1] = buffer[position] + 32;
+									                    }
+									                }
+									                k++;
+									                position++;
+									            }
+									            filename[8] = '.';
+	                                            filename_read_finished = 1;
+	                                            position = position - 11;
+									        }
+									    }
+									}
+									//Check if filename is a System file and the filename reading was completed
+									if((buffer[position+11]&0x0E)==0x00 && filename_read_finished == 1)
+									{
+									    if((buffer[position+11]&0x30)==0x10)
+                                        {
+                                            file_dir[fd_count].type=IS_DIR;
+                                        }
+                                        else
+                                        {
+                                            if((buffer[position+11]&0x30)==0x20)
+                                            {
+                                                file_dir[fd_count].type=IS_FILE;
+                                            }
+                                        }
+									    uint8_t k = 0;
+									    while(k<255)
+									    {
+									        file_dir[fd_count].name.file_dir_name[k]=filename[k];
+									        k++;
+									    }
+									    //Reset filename
+									    k = 0;
+									    while(k<255)
+									    {
+									        filename[k]=0x00;
+									        k++;
+									    }
+                                        int time=(((int)(buffer[position+23]))<<8) + ((int)buffer[position+22]);
+                                        int date=(((int)(buffer[position+25]))<<8) + ((int)buffer[position+24]);
+                                        file_dir[fd_count].name.info.minute=(time&0x07E0)>>5;
+                                        file_dir[fd_count].name.info.hour=(time&0xF800)>>11;
+                                        file_dir[fd_count].name.info.month=((date&0x01E0)>>5);
+                                        file_dir[fd_count].name.info.year=((date&0xFE00)>>9)+1980;
+                                        file_dir[fd_count].name.info.day=date&0x001F;
+                                        file_dir[fd_count].name.info.size=(long)((buffer[position+31])<<24)+(long)((buffer[position+30])<<16)+(long)((buffer[position+29])<<8)+(long)(buffer[position+28]);
+                                        file_dir[fd_count].name.info.first_cluster=(long)((buffer[position+21])<<24)+(long)((buffer[position+20])<<16)+(long)((buffer[position+27])<<8)+(long)(buffer[position+26]);
+                                        position = position + 32;
+									}
+									else
+									{
+									    if(filename_read_finished == 1)
+									    {
+                                            //Reset filename
+                                            uint8_t k = 0;
+                                            while(k<255)
+                                            {
+                                                filename[k]=0x00;
+                                                k++;
+                                            }
+                                            position++;
+									    }
 									}
 								}
 								else
 								{//Normal record with short filename
-									//Is it a directory (not system's)?
-									if((buffer[position+11]&0x30)==0x10 && (buffer[position+11]&0x0E)==0x00)
-									{
-										file_dir[cuenta].type=IS_DIR;
-										for(n=0;n<11;n++)
-										{
-											file_dir[cuenta].name.file_dir_name[n]=buffer[position];
-											position++;
-										}
-										int time=(((int)(buffer[position-11+23]))<<8) + ((int)buffer[position-11+22]);
-										int date=(((int)(buffer[position-11+25]))<<8) + ((int)buffer[position-11+24]);
-										file_dir[cuenta].name.info.minute=(time&0x07E0)>>5;
-										file_dir[cuenta].name.info.hour=(time&0xF800)>>11;
-										file_dir[cuenta].name.info.month=((date&0x01E0)>>5);
-										file_dir[cuenta].name.info.year=((date&0xFE00)>>9)+1980;
-										file_dir[cuenta].name.info.day=date&0x001F;
-										file_dir[cuenta].name.info.size=(long)((buffer[position-11+31])<<24)+(long)((buffer[position-11+30])<<16)+(long)((buffer[position-11+29])<<8)+(long)(buffer[position-11+28]);
-										file_dir[cuenta].name.info.first_cluster=(long)((buffer[position-11+21])<<24)+(long)((buffer[position-11+20])<<16)+(long)((buffer[position-11+27])<<8)+(long)(buffer[position-11+26]);
-									}
-									else
-									{
-										if(((buffer[position+11])&0x30)==0x20 && ((buffer[position+11])&0x0E)==0x00)
-										{
-											file_dir[cuenta].type=IS_FILE;
-											for(n=0;n<11;n++)
-											{
-												file_dir[cuenta].name.file_dir_name[n]=buffer[position];
-												position++;
-											}
-											int time=(((int)(buffer[position-11+23]))<<8) + ((int)buffer[position-11+22]);
-											int date=(((int)(buffer[position-11+25]))<<8) + ((int)buffer[position-11+24]);
-											file_dir[cuenta].name.info.minute=(time&0x07E0)>>5;
-											file_dir[cuenta].name.info.hour=(time&0xF800)>>11;
-											file_dir[cuenta].name.info.month=((date&0x01E0)>>5);
-											file_dir[cuenta].name.info.year=((date&0xFE00)>>9)+1980;
-											file_dir[cuenta].name.info.day=date&0x001F;
-											file_dir[cuenta].name.info.size=(long)((buffer[position-11+31])<<24)+(long)((buffer[position-11+30])<<16)+(long)((buffer[position-11+29])<<8)+(long)(buffer[position-11+28]);
-											file_dir[cuenta].name.info.first_cluster=(long)((buffer[position-11+21])<<24)+(long)((buffer[position-11+20])<<16)+(long)((buffer[position-11+27])<<8)+(long)(buffer[position-11+26]);
-											//files++;
-										}
-										else
-										{
-											if(position==512)
-											{
-												//position=0;
-											}
-											else
-											{
-												position++;
-											}
-										}
-									}
+									//Check it is not a system file or directory and names to be read are short names
+								    if((buffer[position+11]&0x0E)==0x00 && name==SHORT_NAME)
+								    {
+								        if((buffer[position+11]&0x30)==0x10)
+								        {
+								            file_dir[fd_count].type=IS_DIR;
+								        }
+								        else
+								        {
+								            if((buffer[position+11]&0x30)==0x10)
+								            {
+								                file_dir[fd_count].type=IS_FILE;
+								            }
+								        }
+                                        for(n=0;n<11;n++)
+                                        {
+                                            file_dir[fd_count].name.file_dir_name[n]=buffer[position];
+                                            position++;
+                                        }
+                                        int time=(((int)(buffer[position-11+23]))<<8) + ((int)buffer[position-11+22]);
+                                        int date=(((int)(buffer[position-11+25]))<<8) + ((int)buffer[position-11+24]);
+                                        file_dir[fd_count].name.info.minute=(time&0x07E0)>>5;
+                                        file_dir[fd_count].name.info.hour=(time&0xF800)>>11;
+                                        file_dir[fd_count].name.info.month=((date&0x01E0)>>5);
+                                        file_dir[fd_count].name.info.year=((date&0xFE00)>>9)+1980;
+                                        file_dir[fd_count].name.info.day=date&0x001F;
+                                        file_dir[fd_count].name.info.size=(long)((buffer[position-11+31])<<24)+(long)((buffer[position-11+30])<<16)+(long)((buffer[position-11+29])<<8)+(long)(buffer[position-11+28]);
+                                        file_dir[fd_count].name.info.first_cluster=(long)((buffer[position-11+21])<<24)+(long)((buffer[position-11+20])<<16)+(long)((buffer[position-11+27])<<8)+(long)(buffer[position-11+26]);
+								    }
+								    else
+								    {
+								        if(position==512)
+								        {
+								            //position=0;
+								        }
+								        else
+								        {
+								            position++;
+								        }
+								    }
 								}
 							}
 						}
 						clean_name();
-						if(file_dir[cuenta].name.file_dir_name[0]!=0xFF && file_dir[cuenta].name.file_dir_name[0]!=0x00)
+						if(file_dir[fd_count].name.file_dir_name[0]!=0xFF && file_dir[fd_count].name.file_dir_name[0]!=0x00)
 						{
-							if(file_dir[cuenta].type==IS_DIR)
+							if(file_dir[fd_count].type==IS_DIR)
 							{
-								printf("%d. (DIR)\t\t", number);
+								printf("%d. (DIR)\t", number);
 							}
 							else
 							{
-								printf("%d. (FILE)\t\t", number);
+								printf("%d. (FILE)\t", number);
 							}
 							char i;
 							for(i=0;i<255;i++)
 							{
-								if(file_dir[cuenta].name.file_dir_name[i]!=0x00)
+								if(file_dir[fd_count].name.file_dir_name[i]!=0x00)
 								{
-									printf("%c",file_dir[cuenta].name.file_dir_name[i]);
+									printf("%c",file_dir[fd_count].name.file_dir_name[i]);
 								}
 							}
 							printf("\t\t");
-							printf("%d/%d/%d	%d:%d\n",file_dir[cuenta].name.info.day,file_dir[cuenta].name.info.month,file_dir[cuenta].name.info.year,file_dir[cuenta].name.info.hour,file_dir[cuenta].name.info.minute);
-							cuenta++;
+							printf("%d/%d/%d	%d:%d\n",file_dir[fd_count].name.info.day,file_dir[fd_count].name.info.month,file_dir[fd_count].name.info.year,file_dir[fd_count].name.info.hour,file_dir[fd_count].name.info.minute);
+							fd_count++;
 							number++;
 						}
 					}
@@ -894,13 +1046,14 @@ long list_dirs_and_files(long next_cluster,enum name_type name, enum get_subdirs
 	}
 	send_command(CMD12,0,SSI_number);
 	sectors_to_be_read=(next_cluster*4)/512;
+	long sector=0;
 	if(send_command(CMD18,fat_begin_lba,SSI_number)==0)
 	{
 		do
 		{
 			sector++;
 			rcvr_datablock(buffer, 512,SSI_number);
-		}while(sector<=sectors_to_be_read);
+		}while(sectors_to_be_read>0);
 		sector--;
 	}
 	send_command(CMD12,0,SSI_number);
@@ -975,7 +1128,7 @@ long open_file(long next_cluster,enum SSI SSI_number)
 		{
 			sector++;
 			rcvr_datablock(buffer, 512,SSI_number);
-		}while(sector<=sectors_to_be_read);
+		}while(sectors_to_be_read>0);
 		sector--;
 	}
 	send_command(CMD12,0,SSI_number);
@@ -985,28 +1138,6 @@ long open_file(long next_cluster,enum SSI SSI_number)
 		finish=0;
 	}
 	return next_cluster;
-}
-
-/*
- * Removes non ascii characters
- * Note: It must be checked if it removes characters, for example, with accents
- */
-void clean_name()
-{
-	char j,k;
-	for(j=0;j<255;j++)
-	{
-		if(file_dir[cuenta].name.file_dir_name[j]<0x20 || file_dir[cuenta].name.file_dir_name[j]>0x7E)
-		{
-			k=j;
-			do
-			{
-				k++;
-			}while(k<255 && (file_dir[cuenta].name.file_dir_name[k]<0x20 || file_dir[cuenta].name.file_dir_name[k]>0x7E));
-			file_dir[cuenta].name.file_dir_name[j]=file_dir[cuenta].name.file_dir_name[k];
-			file_dir[cuenta].name.file_dir_name[k]=0x00;
-		}
-	}
 }
 
 /*

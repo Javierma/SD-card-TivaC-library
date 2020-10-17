@@ -12,4 +12,5 @@
 	<createSlaveProjects value=""/>
 	<templateProperties value="id=com.ti.common.project.core.emptyProjectWithMainTemplate,"/>
 	<isTargetManual value="false"/>
+	<origin value="/Volumes/JAVIMA/workspace_v6_1/sdcard-spi"/>
 </projectOptions>
