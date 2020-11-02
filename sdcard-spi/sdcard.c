@@ -797,6 +797,7 @@ long get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs 
 									    //Filename exactly has a length of 8 bytes and either the base name or the extension have all its characters in capital letters, so we need to check
 									    if((buffer[position+12]&0x18)>0)
                                         {
+									        //Base
 									        if((buffer[position+12]&0x10)>0 && (buffer[position+12]&0x08)>0)
 									        {
 									            uint8_t k=0;
@@ -804,13 +805,13 @@ long get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs 
 									            {
 									                if(k < 8)
 									                {
-									                    filename[k] = buffer[position];
+									                    filename[k] = buffer[position] + 32;
 									                }
 									                else
 									                {
 									                    if(k >= 8)
 									                    {
-									                        filename[k+1] = buffer[position];
+									                        filename[k+1] = buffer[position] + 32;
 									                    }
 									                }
 									                k++;
@@ -867,7 +868,7 @@ long get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs 
                                         }
 									    else
 									    {
-									        //Both basename and extension are lowercase
+									        //Both basename and extension are uppercase
 									        if((buffer[position+12]&0x18)==0)
 									        {
 									            uint8_t k=0;
@@ -875,13 +876,13 @@ long get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs 
 									            {
 									                if(k < 8)
 									                {
-									                    filename[k] = buffer[position] + 32;
+									                    filename[k] = buffer[position];
 									                }
 									                else
 									                {
 									                    if(k >= 8)
 									                    {
-									                        filename[k+1] = buffer[position] + 32;
+									                        filename[k+1] = buffer[position];
 									                    }
 									                }
 									                k++;
