@@ -73,6 +73,7 @@ void tx_high(enum SSI);
 void Timer5_Init(void);
 void change_speed(enum SSI);
 long open_file(long next_cluster,enum SSI);
+long open_file_by_name(char *filename, enum SSI);
 long get_root_dir_first_cluster(void);
 long get_first_cluster(int pos);
 long get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs subdirs, enum SSI SSI_number);

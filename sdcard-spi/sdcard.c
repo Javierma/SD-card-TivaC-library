@@ -45,6 +45,7 @@
 unsigned char Timer1,Timer2;
 unsigned long lba_begin_address,number_of_sectors,lba_addr,cluster_start,file_size,cluster_begin_lba,fat_begin_lba,sectors_per_fat,root_dir_first_cluster;
 unsigned long previous_cluster=0,cluster_dir=0;
+long file_next_cluster = 0x00000000;
 unsigned char sectors_per_cluster;
 char fd_count=0,current_count=0;
 char finish=0;
@@ -169,6 +170,31 @@ void clean_name()
             k++;
         }
     }*/
+}
+
+/*
+ * Open the specified file by specifying its name (case sensitive)
+ * Note: For now it does not open file with accented characters in its name
+ */
+long open_file_by_name(char *filename, enum SSI SSI_number)
+{
+    uint8_t index = 0;
+    if(file_next_cluster == 0x00000000)
+    {
+        while(index < 40 && strcmp(filename, file_dir[index].name.file_dir_name) != 0)
+        {
+            index++;
+        }
+        if(index < 40)
+        {
+            file_next_cluster = open_file(file_dir[index].name.info.first_cluster, SSI_number);
+        }
+    }
+    else
+    {
+        file_next_cluster = open_file(file_next_cluster, SSI_number);
+    }
+    return file_next_cluster;
 }
 
 /*
