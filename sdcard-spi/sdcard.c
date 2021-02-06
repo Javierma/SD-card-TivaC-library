@@ -43,10 +43,12 @@
 
 
 unsigned char Timer1,Timer2;
-unsigned long lba_begin_address,number_of_sectors,lba_addr,cluster_start,file_size,cluster_begin_lba,fat_begin_lba,sectors_per_fat,root_dir_first_cluster;
-unsigned long previous_cluster=0,cluster_dir=0;
-long file_next_cluster = 0x00000000;
-unsigned char sectors_per_cluster;
+unsigned long lba_begin_address,number_of_sectors,lba_addr,cluster_start,file_size,fat_begin_lba,sectors_per_fat,root_dir_first_cluster;
+unsigned long previous_cluster=0;
+unsigned long cluster_dir=0;
+long volatile file_next_cluster = 0;
+unsigned char volatile sectors_per_cluster;
+unsigned long volatile cluster_begin_lba;
 char fd_count=0,current_count=0;
 char finish=0;
 int row=0,column=0,number=0;
