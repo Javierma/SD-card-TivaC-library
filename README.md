@@ -1,6 +1,6 @@
 # SD-card-TivaC-library
 
-This is a library to read SD cards that have FAT32 filesystem (single partition) using TM4C123GH6PM microcontroller. To test it, you can directly import the project (sdcard-spi)in Code Composer Studio.
+This is a library to read SD cards that have FAT32 filesystem (single partition) using TM4C123GH6PM microcontroller. To test it, you can directly import the project (sdcard-spi) in Code Composer Studio.
 
 Please note that in case that you use another board the configuration will probably not be valid without making some changes.
 
