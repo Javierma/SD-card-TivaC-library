@@ -305,6 +305,13 @@ void initialise_sd(enum SSI SSI_number)
 	dummy_clock(SSI_number);
 	cs_low(SSI_number);
 	i=0;
+	/* Give the card some time to complete initialisation */
+	while(i<10 && send_command(CMD0, 0,SSI_number) != 1)
+	{
+	    SysTick_Wait50ms(4);
+	    i++;
+	}
+	i=0;
 	/*Checks if SD card is in IDLE mode. If so, response will be 1*/
 	if(send_command(CMD0, 0,SSI_number) == 1)
 	{
